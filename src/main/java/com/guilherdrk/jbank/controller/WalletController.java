@@ -1,13 +1,12 @@
 package com.guilherdrk.jbank.controller;
 
 import com.guilherdrk.jbank.dto.CreateWalletDTO;
+import com.guilherdrk.jbank.exception.WalletDataAlreadyExistsException;
 import com.guilherdrk.jbank.model.WalletEntity;
 import com.guilherdrk.jbank.service.WalletService;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 
@@ -26,4 +25,7 @@ public class WalletController {
         var wallet = walletService.createWallet(dto);
         return ResponseEntity.created(URI.create("/wallets/" + wallet.getWalletId().toString())).build();
     }
+
+
+
 }
