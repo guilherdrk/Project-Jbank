@@ -11,6 +11,7 @@ import java.util.UUID;
 public class TransferEntity{
     @Id
     @Column(name = "transfer_id")
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID transferId;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "wallet_receiver_id")
@@ -22,6 +23,7 @@ public class TransferEntity{
     private BigDecimal transferValue;
     @Column(name = "transfer_date_time")
     private LocalDateTime transferDateTime;
+
 
     public TransferEntity() {}
 
