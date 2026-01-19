@@ -1,19 +1,20 @@
 package com.guilherdrk.jbank.service;
 
-import com.guilherdrk.jbank.dto.CreateWalletDTO;
-import com.guilherdrk.jbank.dto.DepositMoneyDTO;
+import com.guilherdrk.jbank.dto.*;
 import com.guilherdrk.jbank.exception.DeleteWalletException;
+import com.guilherdrk.jbank.exception.StatementException;
 import com.guilherdrk.jbank.exception.WalletDataAlreadyExistsException;
 import com.guilherdrk.jbank.exception.WalletNotFoundException;
 import com.guilherdrk.jbank.model.DepositEntity;
 import com.guilherdrk.jbank.model.WalletEntity;
 import com.guilherdrk.jbank.repository.DepositRepository;
 import com.guilherdrk.jbank.repository.WalletRepository;
+import com.guilherdrk.jbank.repository.dto.StatementeView;
 import jakarta.validation.Valid;
-import org.springframework.http.ResponseEntity;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.RequestBody;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -29,6 +30,74 @@ public class WalletService {
     public WalletService(WalletRepository walletRepository, DepositRepository depositRepository) {
         this.walletRepository = walletRepository;
         this.depositRepository = depositRepository;
+    }
+
+    public StatementDTO getStatements(UUID walletId, Integer page, Integer pageSize) {
+
+        var wallet =walletRepository.findById(walletId)
+                .orElseThrow(() -> new WalletNotFoundException("there is no wallet with this id"));
+
+        var pageRequest = PageRequest.of(page, pageSize, Sort.Direction.DESC, "statement_date_time");
+
+        var statements = walletRepository.findStatements(walletId, pageRequest)
+                .map(view -> mapToDTO(walletId, view));
+
+        return new StatementDTO(
+                new WalletDTO(wallet.getWalletId(), wallet.getCpf(), wallet.getName(), wallet.getEmail(), wallet.getBalance()),
+                statements.getContent(),
+                new PaginationDTO(statements.getNumber(), statements.getSize(), statements.getTotalElements(), statements.getTotalPages())
+        );
+
+    }
+
+    private StatementItemDTO mapToDTO(UUID walletId, StatementeView view) {
+
+        if (view.getType().equalsIgnoreCase("deposit")){
+            return mapToDeposit(view);
+        };
+        if(view.getType().equalsIgnoreCase("transfer")
+                && view.getWalletSender().equalsIgnoreCase(walletId.toString())){
+            return mapWhenTransferSend(walletId, view);
+        }
+        if(view.getType().equalsIgnoreCase("transfer")
+                && view.getWalletReceiver().equalsIgnoreCase(walletId.toString())){
+            return mapWhenTransferReceived(walletId, view);
+        }
+
+        throw new StatementException("invalid type: " + view.getType());
+    }
+
+    private StatementItemDTO mapWhenTransferReceived(UUID walletId, StatementeView view) {
+        return new StatementItemDTO(
+                view.getStatementId(),
+                view.getType(),
+                "Money received from " + view.getWalletSender(),
+                view.getStatementValue(),
+                view.getStatementDateTime(),
+                StatementOperationEnum.CREDIT
+        );
+    }
+
+    private StatementItemDTO mapWhenTransferSend(UUID walletId, StatementeView view) {
+        return new StatementItemDTO(
+                view.getStatementId(),
+                view.getType(),
+                "Money send to " + view.getWalletReceiver(),
+                view.getStatementValue(),
+                view.getStatementDateTime(),
+                StatementOperationEnum.DEBIT
+        );
+    }
+
+    private static StatementItemDTO mapToDeposit(StatementeView view) {
+        return new StatementItemDTO(
+                view.getStatementId(),
+                view.getType(),
+                "Money deposit",
+                view.getStatementValue(),
+                view.getStatementDateTime(),
+                StatementOperationEnum.CREDIT
+        );
     }
 
     public WalletEntity createWallet(CreateWalletDTO dto) {
