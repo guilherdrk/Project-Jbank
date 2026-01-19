@@ -2,12 +2,10 @@ package com.guilherdrk.jbank.controller;
 
 import com.guilherdrk.jbank.dto.CreateWalletDTO;
 import com.guilherdrk.jbank.dto.DepositMoneyDTO;
-import com.guilherdrk.jbank.exception.WalletDataAlreadyExistsException;
-import com.guilherdrk.jbank.model.WalletEntity;
+import com.guilherdrk.jbank.dto.StatementDTO;
 import com.guilherdrk.jbank.service.WalletService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
-import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -46,5 +44,16 @@ public class WalletController {
 
         return ResponseEntity.ok().build();
     }
+
+    @GetMapping("/{walletId}/statements")
+    public ResponseEntity<StatementDTO> getStatement(@PathVariable("walletId") UUID walletId,
+                                                     @RequestParam(name = "page", defaultValue = "0") Integer page,
+                                                     @RequestParam(name = "pageSize", defaultValue = "5") Integer pageSize){
+
+        var statement = walletService.getStatements(walletId, page, pageSize);
+
+        return ResponseEntity.ok(statement);
+    }
+
 
 }
