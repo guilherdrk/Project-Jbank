@@ -79,5 +79,6 @@ public class WalletService {
         wallet.setBalance(wallet.getBalance().add(dto.value()));
         walletRepository.save(wallet);
 
+
     }
 }

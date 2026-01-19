@@ -21,6 +21,16 @@ public class WalletEntity {
     private String name;
     @Column(name = "balance")
     private BigDecimal balance;
+    @Version
+    private Long version;
+
+    public Long getVersion() {
+        return version;
+    }
+
+    public void setVersion(Long version) {
+        this.version = version;
+    }
 
     public WalletEntity() {}
 
